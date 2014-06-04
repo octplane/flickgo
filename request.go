@@ -121,10 +121,7 @@ func processReponse(c *Client, r *http.Response) (io.ReadCloser, error) {
 func parseXML(in io.Reader, resp interface{}, logger Debugfer) error {
 	buf := bytes.NewBuffer(nil)
 	io.Copy(buf, in)
-	if logger != nil {
-		logger.Debugf("Parsing XML %s", string(buf.Bytes()))
-	}
-	if err := xml.NewDecoder(buf).Decode(resp); err != nil {
+	if err := xml.Unmarshal(buf.Bytes(), resp); err != nil {
 		return wrapErr("XML parsing failed", err)
 	}
 	return nil
@@ -144,7 +141,7 @@ func fetch(c *Client, u string) (io.ReadCloser, error) {
 // with the API secret.
 func flickrGet(c *Client, url_ string, resp interface{}) error {
 	if c.Logger != nil {
-		c.Logger.Debugf("GET %v\n", url_)
+		c.Logger.Debug("GET %v\n", url_)
 	}
 	in, err := fetch(c, url_)
 	if err != nil {
@@ -156,7 +153,7 @@ func flickrGet(c *Client, url_ string, resp interface{}) error {
 
 func flickrPost(c *Client, req *http.Request, resp interface{}) error {
 	if c.Logger != nil {
-		c.Logger.Debugf("POST %v\n", req.URL)
+		c.Logger.Debug("POST %v\n", req.URL)
 	}
 	r, rErr := c.httpClient.Do(req)
 	if rErr != nil {

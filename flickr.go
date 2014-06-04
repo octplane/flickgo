@@ -21,7 +21,7 @@ const (
 type Debugfer interface {
 	// Debugf formats its arguments according to the format, analogous to fmt.Printf,
 	// and records the text as a log message at Debug level.
-	Debugf(format string, args ...interface{})
+	Debug(format string, args ...interface{})
 }
 
 // Flickr client.
@@ -100,6 +100,31 @@ func (c *Client) GetToken(frob string) (string, *User, error) {
 		return "", nil, r.Err.Err()
 	}
 	return r.Auth.Token, &r.Auth.User, nil
+}
+
+// Returns URL for Flickr photo search.
+func getInfoURL(c *Client, photoId string) string {
+	args := make(map[string]string)
+	args["photo_id"] = photoId
+	return makeURL(c, "flickr.photos.getInfo", args, true)
+}
+
+// Searches for photos.  args contains search parameters as described in
+// http://www.flickr.com/services/api/flickr.photos.search.html.
+func (c *Client) GetInfo(photoId string) (*InfoResponse, error) {
+	r := struct {
+		Stat     string       `xml:"stat,attr"`
+		Err      flickrError  `xml:"err"`
+		Response InfoResponse `xml:"photo"`
+	}{}
+	if err := flickrGet(c, getInfoURL(c, photoId), &r); err != nil {
+		return nil, err
+	}
+	if r.Stat != "ok" {
+		return nil, r.Err.Err()
+	}
+
+	return &r.Response, nil
 }
 
 // Returns URL for Flickr photo search.

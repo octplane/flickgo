@@ -27,6 +27,23 @@ type SearchResponse struct {
 	Photos  []Photo `xml:"photo"`
 }
 
+type InfoResponse struct {
+	ID       string `xml:"id,attr"`
+	Secret   string `xml:"secret,attr"`
+	Server   string `xml:"server,attr"`
+	Rotation string `xml:"rotation,attr"`
+	License  string `xml:"license,attr"`
+	Title    string `xml:"title"`
+	// Description string `xml:"description"`
+	//Visibility  Visibility `xml:"visibility"`
+}
+
+type Visibility struct {
+	IsPublic bool `xml:"ispublic"`
+	IsFriend bool `xml:"isfriend"`
+	IsFamily bool `xml:"isfamily"`
+}
+
 // A Flickr user.
 type User struct {
 	UserName string `xml:"username,attr"`

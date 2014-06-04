@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"github.com/op/go-logging"
 	"hash"
 	"io"
 	"io/ioutil"
@@ -14,6 +15,14 @@ import (
 	"strings"
 	"testing"
 )
+
+var log = logging.MustGetLogger("com.github.octplane.flickgo")
+
+func init() {
+	var format = logging.MustStringFormatter("%{level} %{message}")
+	logging.SetFormatter(format)
+	logging.SetLevel(logging.DEBUG, "com.github.octplane.flickgo")
+}
 
 const (
 	apiKey = "87337fd784"
@@ -28,13 +37,13 @@ func assert(t *testing.T, tag string, cond bool) {
 
 func assertOK(t *testing.T, id string, err error) {
 	if err != nil {
-		t.Errorf("[%s] unexpcted error: %v", id, err)
+		t.Errorf("[%s] unexpected error: %v", id, err)
 	}
 }
 
 func assertEq(t *testing.T, id string, expected interface{}, actual interface{}) {
 	if expected != actual {
-		t.Errorf("[%s] expcted: <%v>, found <%v>", id, expected, actual)
+		t.Errorf("[%s] expected: <%v>, found <%v>", id, expected, actual)
 	}
 }
 
@@ -76,7 +85,7 @@ func TestSignedURL(t *testing.T) {
 	qry.Add("api_key", "apap983 key")
 	qry.Add("api_sig", sig)
 
-	expected, _ := url.Parse("http://www.flickr.com/services/srv/?" + qry.Encode())
+	expected, _ := url.Parse("https://api.flickr.com/services/srv/?" + qry.Encode())
 	actual, err := url.Parse(signedURL(secret, "apap983 key", "srv", args))
 	assertOK(t, "urlParse", err)
 	assertEq(t, "urlScheme", expected.Scheme, actual.Scheme)
@@ -87,30 +96,35 @@ func TestSignedURL(t *testing.T) {
 }
 
 type fakeBody struct {
-	error error
-	data  []byte
-	read  bool
+	error    error
+	data     []byte
+	strData  string
+	Reader   *strings.Reader
+	read     bool
+	position int
+	seen     bool
+}
+
+func bodyWithString(source string) fakeBody {
+	f := fakeBody{}
+	f.strData = source
+	f.Reader = strings.NewReader(f.strData)
+	return f
 }
 
 func (f fakeBody) Read(buf []byte) (int, error) {
-	if currentBody.read {
-		return 0, io.EOF
+	if f.Reader == nil {
+		log.Debug("No reader for %+v\n", f)
+		panic("Irk")
 	}
-
-	for i, b := range f.data {
-		buf[i] = b
-	}
-	currentBody.read = true
-	return len(f.data), f.error
+	log.Debug("Reading reader (size:%d)\n", f.Reader.Len())
+	return f.Reader.Read(buf)
 }
+
 func (f fakeBody) Close() error {
+	f.position = 0
 	return nil
 }
-
-// "Methods" of fakeBody take a fakeBody instance _by value_, which means they
-// cannot mutate the instance being operated on.  This global reference will be
-// set by tests and mutated by fakeBody's methods.  Big time facepalm!
-var currentBody fakeBody
 
 type fakeRoundTripper struct {
 	err   error
@@ -143,10 +157,8 @@ func TestFetchHttpGetFails(t *testing.T) {
 
 func TestFetchSuccess(t *testing.T) {
 	url_ := "http://some.url/?arg=value"
-
-	expectedData := bytes.NewBufferString("response from Flickr").Bytes()
-	body := fakeBody{data: expectedData}
-	currentBody = body
+	expectedData := "response from Flickr"
+	body := bodyWithString(expectedData)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		assertEq(t, "url", url_, r.URL.String())
@@ -159,7 +171,7 @@ func TestFetchSuccess(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	_, cErr := io.Copy(buf, in)
 	assertOK(t, "copy", cErr)
-	assert(t, "data", bytes.Equal(expectedData, buf.Bytes()))
+	assert(t, "data", bytes.Equal([]byte(expectedData), buf.Bytes()))
 }
 
 func TestUploadRequest(t *testing.T) {
@@ -246,9 +258,7 @@ func TestGetTokenAPIFailure(t *testing.T) {
     <rsp stat="fail">
       <err code="97" msg="Missing signature"/>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -269,9 +279,8 @@ func TestGetToken(t *testing.T) {
         <user nsid="7687633@N01" username="testuser" fullname="Test User"/>
       </auth>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
+
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -289,9 +298,8 @@ func TestUploadFails(t *testing.T) {
     <rsp stat="fail">
       <err code="5" msg="Filetype was not recognised"/>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
+
 	resp := http.Response{Body: body}
 	postFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -309,9 +317,7 @@ func TestUpload(t *testing.T) {
     <rsp stat="ok">
       <ticketid>363</ticketid>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	postFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -353,9 +359,7 @@ func TestSearch(t *testing.T) {
 							 width_t="120" height_t="100"/>
       </photos>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -387,6 +391,48 @@ func TestSearch(t *testing.T) {
 		"100", "100", 1.00)
 	verify(r.Photos[1], 1, "5678", "22@N01", "36221", "32", "4", "puppies", "1",
 		"120", "100", float64(120)/100)
+}
+
+func TestInfo(t *testing.T) {
+	xmlStr := `<photo id="2733" secret="123456" server="12" isfavorite="0" license="3" rotation="90" originalsecret="1bc09ce34a" originalformat="png">
+  <owner nsid="12037949754@N01" username="Bees" realname="Cal Henderson" location="Bedford, UK" />
+  <title>orford_castle_taster</title>
+  <description>hello!</description>
+  <visibility ispublic="1" isfriend="0" isfamily="0" />
+  <dates posted="1100897479" taken="2004-11-19 12:51:19" takengranularity="0" lastupdate="1093022469" />
+  <permissions permcomment="3" permaddmeta="2" />
+  <editability cancomment="1" canaddmeta="1" />
+  <comments>1</comments>
+  <notes>
+    <note id="313" author="12037949754@N01" authorname="Bees" x="10" y="10" w="50" h="50">foo</note>
+  </notes>
+  <tags>
+    <tag id="1234" author="12037949754@N01" raw="woo yay">wooyay</tag>
+    <tag id="1235" author="12037949754@N01" raw="hoopla">hoopla</tag>
+  </tags>
+  <urls>
+    <url type="photopage">http://www.flickr.com/photos/bees/2733/</url>
+  </urls>
+</photo>`
+	body := bodyWithString(xmlStr)
+	resp := http.Response{Body: body}
+	getFn := func(r *http.Request) (*http.Response, error) {
+		return &resp, nil
+	}
+	c := New(apiKey, secret, newHTTPClient(getFn))
+	c.Logger = log
+	r, _ := c.GetInfo("2733")
+	log.Debug("r: %+v", r)
+
+	// assertOK(t, "GetInfo", err)
+	// assertEq(t, "license", "3", r.License)
+	// assertEq(t, "secret", "123456", r.Secret)
+	// assertEq(t, "server", "12", r.Server)
+	// assertEq(t, "rotation", "90", r.Rotation)
+	//assertEq(t, "title", "orford_castle_taster", r.Title)
+	//	assertEq(t, "description", "hello!", r.Description)
+	//	assert(t, "visibility.IsPublic", r.Visibility.IsPublic)
+
 }
 
 func TestURL(t *testing.T) {
@@ -431,9 +477,7 @@ func TestCheckTickets(t *testing.T) {
         <ticket id="333" invalid="1"/>
       </uploader>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil
@@ -483,9 +527,7 @@ func TestGetSets(t *testing.T) {
         </photoset>
       </photosets>
     </rsp>`
-	xmlBytes := bytes.NewBufferString(xmlStr).Bytes()
-	body := fakeBody{data: xmlBytes}
-	currentBody = body
+	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
 		return &resp, nil

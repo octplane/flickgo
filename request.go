@@ -121,7 +121,6 @@ func processReponse(c *Client, r *http.Response) (io.ReadCloser, error) {
 func parseXML(in io.Reader, resp interface{}, logger Debugfer) error {
 	buf := bytes.NewBuffer(nil)
 	io.Copy(buf, in)
-	log.Debug("XML: %s", buf.String())
 	if err := xml.Unmarshal(buf.Bytes(), resp); err != nil {
 		return wrapErr("XML parsing failed", err)
 	}

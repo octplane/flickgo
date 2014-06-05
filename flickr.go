@@ -117,7 +117,8 @@ func (c *Client) GetInfo(photoId string) (*InfoResponse, error) {
 		Err      flickrError  `xml:"err"`
 		Response InfoResponse `xml:"photo"`
 	}{}
-	if err := flickrGet(c, getInfoURL(c, photoId), &r); err != nil {
+	err := flickrGet(c, getInfoURL(c, photoId), &r)
+	if err != nil {
 		return nil, err
 	}
 	if r.Stat != "ok" {

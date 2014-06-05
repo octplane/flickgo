@@ -21,7 +21,7 @@ var log = logging.MustGetLogger("com.github.octplane.flickgo")
 func init() {
 	var format = logging.MustStringFormatter("%{level} %{message}")
 	logging.SetFormatter(format)
-	logging.SetLevel(logging.DEBUG, "com.github.octplane.flickgo")
+	logging.SetLevel(logging.INFO, "com.github.octplane.flickgo")
 }
 
 const (
@@ -394,7 +394,8 @@ func TestSearch(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
-	xmlStr := `<photo id="2733" secret="123456" server="12" isfavorite="0" license="3" rotation="90" originalsecret="1bc09ce34a" originalformat="png">
+	xmlStr := `<rsp stat="ok">
+<photo id="2733" secret="123456" server="12" isfavorite="0" license="3" rotation="90" originalsecret="1bc09ce34a" originalformat="png">
   <owner nsid="12037949754@N01" username="Bees" realname="Cal Henderson" location="Bedford, UK" />
   <title>orford_castle_taster</title>
   <description>hello!</description>
@@ -413,7 +414,8 @@ func TestInfo(t *testing.T) {
   <urls>
     <url type="photopage">http://www.flickr.com/photos/bees/2733/</url>
   </urls>
-</photo>`
+</photo>
+</rsp>`
 	body := bodyWithString(xmlStr)
 	resp := http.Response{Body: body}
 	getFn := func(r *http.Request) (*http.Response, error) {
@@ -421,10 +423,10 @@ func TestInfo(t *testing.T) {
 	}
 	c := New(apiKey, secret, newHTTPClient(getFn))
 	c.Logger = log
-	r, _ := c.GetInfo("2733")
+	r, err := c.GetInfo("2733")
 	log.Debug("r: %+v", r)
 
-	// assertOK(t, "GetInfo", err)
+	assertOK(t, "GetInfo", err)
 	// assertEq(t, "license", "3", r.License)
 	// assertEq(t, "secret", "123456", r.Secret)
 	// assertEq(t, "server", "12", r.Server)

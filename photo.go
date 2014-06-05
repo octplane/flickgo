@@ -39,9 +39,9 @@ type InfoResponse struct {
 }
 
 type Visibility struct {
-	IsPublic bool `xml:"ispublic"`
-	IsFriend bool `xml:"isfriend"`
-	IsFamily bool `xml:"isfamily"`
+	IsPublic bool `xml:"ispublic,attr"`
+	IsFriend bool `xml:"isfriend,attr"`
+	IsFamily bool `xml:"isfamily,attr"`
 }
 
 // A Flickr user.

@@ -427,13 +427,15 @@ func TestInfo(t *testing.T) {
 	log.Debug("r: %+v", r)
 
 	assertOK(t, "GetInfo", err)
-	// assertEq(t, "license", "3", r.License)
-	// assertEq(t, "secret", "123456", r.Secret)
-	// assertEq(t, "server", "12", r.Server)
-	// assertEq(t, "rotation", "90", r.Rotation)
-	//assertEq(t, "title", "orford_castle_taster", r.Title)
-	//	assertEq(t, "description", "hello!", r.Description)
-	//	assert(t, "visibility.IsPublic", r.Visibility.IsPublic)
+	assertEq(t, "license", "3", r.License)
+	assertEq(t, "secret", "123456", r.Secret)
+	assertEq(t, "server", "12", r.Server)
+	assertEq(t, "rotation", "90", r.Rotation)
+	assertEq(t, "title", "orford_castle_taster", r.Title)
+	assertEq(t, "description", "hello!", r.Description)
+	assert(t, "visibility.IsPublic", r.Visibility.IsPublic)
+	assert(t, "visibility.IsFriend", !r.Visibility.IsFriend)
+	assert(t, "visibility.IsFamily", !r.Visibility.IsFamily)
 
 }
 

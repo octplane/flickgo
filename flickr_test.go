@@ -424,7 +424,6 @@ func TestInfo(t *testing.T) {
 	c := New(apiKey, secret, newHTTPClient(getFn))
 	c.Logger = log
 	r, err := c.GetInfo("2733")
-	log.Debug("r: %+v", r)
 
 	assertOK(t, "GetInfo", err)
 	assertEq(t, "license", "3", r.License)
@@ -436,6 +435,11 @@ func TestInfo(t *testing.T) {
 	assert(t, "visibility.IsPublic", r.Visibility.IsPublic)
 	assert(t, "visibility.IsFriend", !r.Visibility.IsFriend)
 	assert(t, "visibility.IsFamily", !r.Visibility.IsFamily)
+	//	"Fri, 19 Nov 2004 20:51:19 GMT"
+	assertEq(t, "Dates.Posted", "1100897479", r.Dates.Posted)
+	assertEq(t, "Dates.Taken", "2004-11-19 12:51:19", r.Dates.Taken)
+	assertEq(t, "Dates.Lastupdate", "1093022469", r.Dates.Lastupdate)
+	assertEq(t, "Dates.Takengranularity", 0, r.Dates.Takengranularity)
 
 }
 

@@ -4,6 +4,8 @@ package flickgo
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 )
 
 // Image sizes supported by Flickr.  See
@@ -36,12 +38,52 @@ type InfoResponse struct {
 	Title       string     `xml:"title"`
 	Description string     `xml:"description"`
 	Visibility  Visibility `xml:"visibility"`
+	Dates       Dates      `xml:"dates"`
+	Tags        []Tag      `xml:"tags>tag"`
+	Urls        []Url      `xml:"urls>url"`
 }
 
 type Visibility struct {
 	IsPublic bool `xml:"ispublic,attr"`
 	IsFriend bool `xml:"isfriend,attr"`
 	IsFamily bool `xml:"isfamily,attr"`
+}
+
+type Dates struct {
+	Posted           string `xml:"posted,attr"` // Unix timestamp
+	Taken            string `xml:"taken,attr"`
+	Takengranularity int    `xml:"takengranularity,attr"`
+	Lastupdate       string `xml:"lastupdate,attr"`
+}
+
+type Tag struct {
+	ID   string `xml:"id,attr"`
+	Text string `xml:",chardata"`
+}
+
+type Url struct {
+	Type string `xml:"type,attr"`
+	Href string `xml:",chardata"`
+}
+
+func stringToTime(source string) time.Time {
+	pd, err := strconv.ParseInt(source, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return time.Unix(pd, 0)
+}
+
+func (d *Dates) PostedTime() time.Time {
+	return stringToTime(d.Posted)
+}
+
+func (d *Dates) TakenTime() time.Time {
+	return stringToTime(d.Taken)
+}
+
+func (d *Dates) LastupdateTime() time.Time {
+	return stringToTime(d.Lastupdate)
 }
 
 // A Flickr user.

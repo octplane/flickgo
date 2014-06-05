@@ -363,7 +363,7 @@ func TestSearch(t *testing.T) {
   assertEq(t, "total", "5", r.Total)
   assertEq(t, "len photos", 2, len(r.Photos))
 
-  verify := func(p Photo, idx int,
+  verify := func(p SearchPhoto, idx int,
     id, owner, secret, server, farm, title, isPublic, widthT, heightT string,
     ratio float64) {
     assertEq(t, fmt.Sprintf("%d.id", idx), id, p.ID)
@@ -468,13 +468,13 @@ func TestGetSizes(t *testing.T) {
 }
 
 func TestURL(t *testing.T) {
-  p := Photo{
-    ID:     "id",
-    Owner:  "owner",
-    Secret: "secret",
-    Server: "server",
-    Farm:   "fx",
-    Title:  "title",
+  p := SearchPhoto{
+    Photo: Photo{ID: "id",
+      Secret: "secret",
+      Server: "server",
+      Farm:   "fx"},
+    Owner: "owner",
+    Title: "title",
   }
   assertEq(t, "url", "http://farmfx.static.flickr.com/server/id_secret.jpg",
     p.URL(SizeMedium500))

@@ -22,25 +22,11 @@ const (
 
 // Response for photo search requests.
 type SearchResponse struct {
-  Page    string  `xml:"page,attr"`
-  Pages   string  `xml:"pages,attr"`
-  PerPage string  `xml:"perpage,attr"`
-  Total   string  `xml:"total,attr"`
-  Photos  []Photo `xml:"photo"`
-}
-
-type InfoResponse struct {
-  ID          string     `xml:"id,attr"`
-  Secret      string     `xml:"secret,attr"`
-  Server      string     `xml:"server,attr"`
-  Rotation    string     `xml:"rotation,attr"`
-  License     string     `xml:"license,attr"`
-  Title       string     `xml:"title"`
-  Description string     `xml:"description"`
-  Visibility  Visibility `xml:"visibility"`
-  Dates       Dates      `xml:"dates"`
-  Tags        []Tag      `xml:"tags>tag"`
-  Urls        []Url      `xml:"urls>url"`
+  Page    string        `xml:"page,attr"`
+  Pages   string        `xml:"pages,attr"`
+  PerPage string        `xml:"perpage,attr"`
+  Total   string        `xml:"total,attr"`
+  Photos  []SearchPhoto `xml:"photo"`
 }
 
 type SizesResponse struct {
@@ -108,18 +94,37 @@ type User struct {
 }
 
 // Represents a Flickr photo.
-type Photo struct {
-  ID       string `xml:"id,attr"`
+type SearchPhoto struct {
+  Photo
+
   Owner    string `xml:"owner,attr"`
-  Secret   string `xml:"secret,attr"`
-  Server   string `xml:"server,attr"`
-  Farm     string `xml:"farm,attr"`
-  Title    string `xml:"title,attr"`
   IsPublic string `xml:"ispublic,attr"`
   Width_T  string `xml:"width_t,attr"`
   Height_T string `xml:"height_t,attr"`
+  Title    string `xml:"title,attr"`
+
   // Photo's aspect ratio: width divided by height.
   Ratio float64
+}
+
+type InfoResponse struct {
+  Photo
+
+  Rotation    string     `xml:"rotation,attr"`
+  License     string     `xml:"license,attr"`
+  Description string     `xml:"description"`
+  Visibility  Visibility `xml:"visibility"`
+  Dates       Dates      `xml:"dates"`
+  Tags        []Tag      `xml:"tags>tag"`
+  Urls        []Url      `xml:"urls>url"`
+  Title       string     `xml:"title"`
+}
+
+type Photo struct {
+  ID     string `xml:"id,attr"`
+  Secret string `xml:"secret,attr"`
+  Server string `xml:"server,attr"`
+  Farm   string `xml:"farm,attr"`
 }
 
 // Returns the URL to this photo in the specified size.

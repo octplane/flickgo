@@ -93,6 +93,13 @@ type User struct {
   NSID     string `xml:"nsid,attr"`
 }
 
+type Photo struct {
+  ID     string `xml:"id,attr"`
+  Secret string `xml:"secret,attr"`
+  Server string `xml:"server,attr"`
+  Farm   string `xml:"farm,attr"`
+}
+
 // Represents a Flickr photo.
 type SearchPhoto struct {
   Photo
@@ -102,6 +109,9 @@ type SearchPhoto struct {
   Width_T  string `xml:"width_t,attr"`
   Height_T string `xml:"height_t,attr"`
   Title    string `xml:"title,attr"`
+
+  Width  int `xml:"o_width,attr"`
+  Height int `xml:"o_height,attr"`
 
   // Photo's aspect ratio: width divided by height.
   Ratio float64
@@ -118,13 +128,6 @@ type InfoResponse struct {
   Tags        []Tag      `xml:"tags>tag"`
   Urls        []Url      `xml:"urls>url"`
   Title       string     `xml:"title"`
-}
-
-type Photo struct {
-  ID     string `xml:"id,attr"`
-  Secret string `xml:"secret,attr"`
-  Server string `xml:"server,attr"`
-  Farm   string `xml:"farm,attr"`
 }
 
 // Returns the URL to this photo in the specified size.
